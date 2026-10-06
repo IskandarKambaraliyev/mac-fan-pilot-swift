@@ -47,6 +47,8 @@ struct Preset: Codable, Hashable, Identifiable {
         return p
     }
 
+    static let customSymbol = "slider.horizontal.3"
+
     // Stable IDs so built-ins survive app updates.
     static let automatic = Preset(id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
                                   name: "Automatic", symbol: "a.circle", isBuiltIn: true, mode: .auto)
@@ -58,4 +60,18 @@ struct Preset: Codable, Hashable, Identifiable {
                                   name: "Full Blast", symbol: "wind", isBuiltIn: true, mode: .fixedPercent(1.0))
 
     static let builtIns = [automatic, balanced, performance, fullBlast]
+}
+
+extension Preset {
+    /// Only `id`, `name` and `mode` are required, so a field added later doesn't make the presets
+    /// saved by an older version unreadable.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(id: try c.decode(UUID.self, forKey: .id),
+                  name: try c.decode(String.self, forKey: .name),
+                  symbol: try c.decodeIfPresent(String.self, forKey: .symbol) ?? Self.customSymbol,
+                  isBuiltIn: try c.decodeIfPresent(Bool.self, forKey: .isBuiltIn) ?? false,
+                  mode: try c.decode(FanMode.self, forKey: .mode),
+                  perFan: try c.decodeIfPresent([Int: FanMode].self, forKey: .perFan) ?? [:])
+    }
 }

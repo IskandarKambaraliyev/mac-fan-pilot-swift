@@ -13,9 +13,20 @@ enum ControlError: Error, CustomStringConvertible {
 }
 
 final class FanController {
+    /// The clock, the waits and the marker file. Tests replace them to step the loop by hand.
+    struct Environment {
+        /// Seconds on a clock that keeps running during sleep, so a long sleep trips the watchdog.
+        var now: () -> Double = { Double(clock_gettime_nsec_np(CLOCK_MONOTONIC)) / 1e9 }
+        var sleep: (TimeInterval) -> Void = { Thread.sleep(forTimeInterval: $0) }
+        var markerPath = FP.helperActiveMarker
+        /// Off in tests, which call `tick()` themselves.
+        var runsTimer = true
+    }
+
     private let log = Logger(subsystem: FP.helperLabel, category: "fan")
     private let queue = DispatchQueue(label: FP.helperLabel + ".control")
-    private let smc: SMC
+    private let smc: SMCAccess
+    private let env: Environment
     private let sampler: SensorSampler
 
     struct FanLimits { let min: Double; let max: Double }
@@ -24,7 +35,7 @@ final class FanController {
     private var preset: Preset?
     private var status: HelperStatus = .idle
     private var timer: DispatchSourceTimer?
-    private var lastHeartbeat = FanController.now()
+    private var lastHeartbeat: Double
     private var unlocked = false          // we raised Ftst
     private var held = Set<Int>()         // fans we switched to manual
     private var markerWritten = false
@@ -34,13 +45,16 @@ final class FanController {
     private var sensorFailures = 0
     private var controlFailures = 0
     private var releaseRetries = 0
+    private var releaseRetryPending = false
 
     /// Bumped by every new command, so a tick stuck waiting for macOS to release a fan gives way.
     private let generation = OSAllocatedUnfairLock(initialState: 0)
 
-    init() throws {
-        smc = try SMC()
+    init(smc: SMCAccess, environment: Environment = Environment()) {
+        self.smc = smc
+        env = environment
         sampler = SensorSampler(smc: smc)
+        lastHeartbeat = environment.now()
         for i in 0..<smc.fanCount() {
             guard let mn = try? smc.double("F\(i)Mn"), let mx = try? smc.double("F\(i)Mx"),
                   mn >= 0, mx > mn else { continue }
@@ -49,7 +63,7 @@ final class FanController {
         log.info("fans: \(self.limits.count), cpu sensors: \(self.sampler.catalog.cpuKeys.count), gpu sensors: \(self.sampler.catalog.gpuKeys.count)")
 
         // A previous instance died while holding the fans: hand them back before anything else.
-        if FileManager.default.fileExists(atPath: FP.helperActiveMarker) {
+        if FileManager.default.fileExists(atPath: env.markerPath) {
             log.warning("found stale control marker → auto")
             markerWritten = true
             held = Set(limits.keys.filter { (try? smc.double("F\($0)Md")) == 1 })
@@ -58,15 +72,12 @@ final class FanController {
         }
     }
 
-    /// Seconds on a clock that keeps running during sleep, so a long sleep trips the watchdog.
-    private static func now() -> Double { Double(clock_gettime_nsec_np(CLOCK_MONOTONIC)) / 1e9 }
-
     // MARK: Public API (thread-safe via queue)
 
     func apply(_ requested: Preset) throws {
         let gen = generation.withLock { $0 += 1; return $0 }
         try queue.sync {
-            lastHeartbeat = Self.now()
+            lastHeartbeat = env.now()
             let p = requested.sanitized
             if p.isAllAuto { releaseLocked(status: .idle); return }
             guard !limits.isEmpty else { throw ControlError.noFans }
@@ -91,22 +102,32 @@ final class FanController {
         }
     }
 
-    func resetToAuto() {
+    /// false while a fan could not be handed back yet. The controller keeps retrying on its own,
+    /// and the process must stay alive until it succeeds.
+    @discardableResult
+    func resetToAuto() -> Bool {
         generation.withLock { $0 += 1 }
-        queue.sync { releaseLocked(status: .idle) }
+        return queue.sync {
+            releaseLocked(status: .idle)
+            return !isHolding
+        }
     }
 
     func heartbeat(_ reply: @escaping (HelperStatus) -> Void) {
         queue.async {
-            self.lastHeartbeat = Self.now()
-            reply(self.status)
+            self.lastHeartbeat = self.env.now()
+            reply(self.status == .controlling && self.emergency ? .emergency : self.status)
         }
     }
+
+    /// One pass of the control loop. The timer does this every `FP.controlInterval`; tests call
+    /// it to step the loop by hand.
+    func tick() { queue.sync { timerFiredLocked() } }
 
     // MARK: Loop
 
     private func startTimerLocked() {
-        guard timer == nil else { return }
+        guard timer == nil, env.runsTimer else { return }
         let t = DispatchSource.makeTimerSource(queue: queue)
         t.schedule(deadline: .now() + FP.controlInterval, repeating: FP.controlInterval, leeway: .milliseconds(100))
         t.setEventHandler { [weak self] in self?.timerFiredLocked() }
@@ -118,7 +139,7 @@ final class FanController {
         guard preset != nil else { return }
 
         // Watchdog: app gone or frozen → give control back to the system.
-        if Self.now() - lastHeartbeat > FP.heartbeatTimeout {
+        if env.now() - lastHeartbeat > FP.heartbeatTimeout {
             log.warning("heartbeat timeout → auto")
             releaseLocked(status: .watchdogReset)
             return
@@ -231,7 +252,10 @@ final class FanController {
         held.remove(fan)
     }
 
-    /// Hands every fan back to macOS. Keeps retrying in the background if a write is refused.
+    /// A fan is still in manual mode, or the unlock flag is still raised.
+    private var isHolding: Bool { !held.isEmpty || unlocked }
+
+    /// Hands every fan back to macOS, and keeps trying in the background while a write is refused.
     private func releaseLocked(status newStatus: HelperStatus) {
         timer?.cancel(); timer = nil
         preset = nil
@@ -243,22 +267,29 @@ final class FanController {
         held = held.filter { !giveBack(fan: $0) }
         if unlocked, (try? smc.write("Ftst", value: 0)) != nil { unlocked = false }
 
-        if held.isEmpty && !unlocked {
+        guard isHolding else {
             releaseRetries = 0
             if markerWritten {
-                try? FileManager.default.removeItem(atPath: FP.helperActiveMarker)
+                try? FileManager.default.removeItem(atPath: env.markerPath)
                 markerWritten = false
                 log.info("all fans → auto")
             }
-        } else if releaseRetries < 30 {
-            releaseRetries += 1
+            return
+        }
+        guard !releaseRetryPending else { return }   // one retry chain, however often this is called
+        releaseRetryPending = true
+        releaseRetries += 1
+        let fast = releaseRetries <= FP.fastReleaseRetries
+        if fast {
             log.error("could not release fans \(self.held.sorted(), privacy: .public); retrying")
-            queue.asyncAfter(deadline: .now() + 2) { [weak self] in
-                guard let self, self.preset == nil, !self.held.isEmpty || self.unlocked else { return }
-                self.releaseLocked(status: self.status)
-            }
-        } else {
-            log.fault("gave up releasing fans \(self.held.sorted(), privacy: .public)")
+        } else if releaseRetries == FP.fastReleaseRetries + 1 {
+            log.fault("fans \(self.held.sorted(), privacy: .public) still held; retrying every 10 s")
+        }
+        queue.asyncAfter(deadline: .now() + (fast ? 2 : 10)) { [weak self] in
+            guard let self else { return }
+            self.releaseRetryPending = false
+            guard self.preset == nil, self.isHolding else { return }
+            self.releaseLocked(status: self.status)
         }
     }
 
@@ -268,25 +299,25 @@ final class FanController {
         for _ in 0..<5 {
             try? smc.write(md, value: 0)
             if (try? smc.double(md)) != 1 { return true }
-            Thread.sleep(forTimeInterval: 0.05)
+            env.sleep(0.05)
         }
         return false
     }
 
     private func writeMarker() {
         guard !markerWritten else { return }
-        markerWritten = FileManager.default.createFile(atPath: FP.helperActiveMarker, contents: nil)
+        markerWritten = FileManager.default.createFile(atPath: env.markerPath, contents: nil)
     }
 
     private func retry(timeout: TimeInterval, interval: TimeInterval, generation gen: Int,
                        _ body: () throws -> Void) throws {
-        let deadline = Self.now() + timeout
+        let deadline = env.now() + timeout
         while true {
             do { try body(); return } catch {
                 guard generation.withLock({ $0 }) == gen else { throw ControlError.superseded }
-                guard Self.now() + interval < deadline else { throw error }
+                guard env.now() + interval < deadline else { throw error }
             }
-            Thread.sleep(forTimeInterval: interval)
+            env.sleep(interval)
         }
     }
 }

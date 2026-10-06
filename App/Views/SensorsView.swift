@@ -13,11 +13,11 @@ struct SensorsView: View {
             } else {
                 Table(model.snapshot.raw) {
                     TableColumn("Key", value: \.id)
-                    TableColumn("Group", value: \.kind)
+                    TableColumn("Name", value: \.name)
                     TableColumn("Value") { Text(model.format(temp: $0.value)).monospacedDigit() }
                 }
             }
-            Text("Raw SMC temperature keys. Presets follow the CPU and GPU groups; Hottest is the highest of both.")
+            Text("Raw SMC temperature keys. Presets follow the CPU and GPU sensors; Hottest is the highest of both. Keys without a name have no known meaning.")
                 .font(.caption).foregroundStyle(.secondary)
         }
         .padding()

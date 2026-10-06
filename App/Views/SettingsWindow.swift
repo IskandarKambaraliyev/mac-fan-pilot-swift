@@ -20,6 +20,8 @@ enum SettingsWindow {
                     DispatchQueue.main.async {
                         MainActor.assumeIsolated {
                             model?.setRawSensors(false)   // in case the Sensors tab was showing
+                            model?.settingsVisible = false
+                            model?.presets.flush()
                             window = nil
                             if let closeObserver { NotificationCenter.default.removeObserver(closeObserver) }
                             closeObserver = nil
@@ -28,6 +30,7 @@ enum SettingsWindow {
                 }
             window = w
         }
+        model.settingsVisible = true
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
     }

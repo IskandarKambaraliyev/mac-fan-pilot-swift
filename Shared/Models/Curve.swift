@@ -40,3 +40,22 @@ struct Curve: Codable, Hashable {
         .init(temp: 40, percent: 0.15), .init(temp: 55, percent: 0.4),
         .init(temp: 70, percent: 0.75), .init(temp: 85, percent: 1.0)])
 }
+
+// Decoding accepts files written by other versions: fields added after 1.0 are optional, and an
+// unknown sensor falls back to the hottest one, which never asks for less cooling.
+extension CurvePoint {
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(id: try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID(),
+                  temp: try c.decode(Double.self, forKey: .temp),
+                  percent: try c.decode(Double.self, forKey: .percent))
+    }
+}
+
+extension Curve {
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let sensor = try c.decodeIfPresent(String.self, forKey: .sensor).map { SensorGroup(rawValue: $0) ?? .hottest }
+        self.init(sensor: sensor ?? .cpuMax, points: try c.decode([CurvePoint].self, forKey: .points))
+    }
+}

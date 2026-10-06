@@ -15,7 +15,7 @@ enum SMCError: Error, CustomStringConvertible {
 }
 
 /// Not thread-safe. Use one instance per serial queue / actor.
-final class SMC {
+final class SMC: SMCAccess {
     private var conn: io_connect_t = 0
     private var infoCache: [String: SMCKeyInfoData] = [:]
 
@@ -97,7 +97,7 @@ final class SMC {
         return (0..<n).compactMap { try? key(at: $0) }
     }
 
-    // MARK: Fans
-
-    func fanCount() -> Int { Int((try? double("FNum")) ?? 0) }
+    func isFloat(_ key: String) -> Bool {
+        (try? keyInfo(key)).map { $0.dataType.fourCCString == "flt " && $0.dataSize == 4 } ?? false
+    }
 }

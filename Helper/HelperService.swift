@@ -43,7 +43,13 @@ final class HelperService: NSObject, HelperProtocol, NSXPCListenerDelegate {
         idleExit?.cancel()
         let work = DispatchWorkItem { [weak self] in
             guard let self, self.clients <= 0 else { return }
-            self.controller.resetToAuto()
+            guard self.controller.resetToAuto() else {
+                // launchd doesn't restart a clean exit, so leaving now would strand the fans in
+                // manual mode with nobody driving them.
+                self.log.error("fans not released yet; staying alive")
+                self.scheduleIdleExit()
+                return
+            }
             exit(EXIT_SUCCESS)
         }
         idleExit = work
@@ -65,5 +71,5 @@ final class HelperService: NSObject, HelperProtocol, NSXPCListenerDelegate {
 
     func resetToAuto(reply: @escaping () -> Void) { controller.resetToAuto(); reply() }
     func heartbeat(reply: @escaping (Int) -> Void) { controller.heartbeat { reply($0.rawValue) } }
-    func version(reply: @escaping (String) -> Void) { reply(FP.helperVersion) }
+    func version(reply: @escaping (String) -> Void) { reply(FP.version) }
 }

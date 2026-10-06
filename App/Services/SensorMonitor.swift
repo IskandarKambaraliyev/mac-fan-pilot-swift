@@ -2,15 +2,15 @@ import Foundation
 
 struct FanReading: Identifiable, Hashable {
     let id: Int
-    let rpm: Double, min: Double, max: Double, target: Double
+    let rpm: Double, min: Double, max: Double
     let manual: Bool
     var fraction: Double { max > min ? (rpm - min) / (max - min) : 0 }
 }
 
 struct SensorReading: Identifiable, Hashable {
     let id: String   // SMC key
+    let name: String // "" when the key's meaning isn't known
     let value: Double
-    let kind: String // "CPU", "GPU" or ""
 }
 
 /// Read-only sensor polling for the UI. Runs off the main thread; publishes snapshots via callback.
@@ -26,7 +26,7 @@ final class SensorMonitor {
     private var smc: SMC?
     private var sampler: SensorSampler?
     private var fanLimits: [(min: Double, max: Double)] = []
-    private var rawKeys: [(key: String, kind: String)] = []
+    private var rawKeys: [(key: String, name: String)] = []
     private var timer: DispatchSourceTimer?
     private var onUpdate: ((Snapshot) -> Void)?
     private var includeRaw = false
@@ -40,10 +40,10 @@ final class SensorMonitor {
                 self.sampler = sampler
                 // A fixed order (CPU, GPU, the rest) so rows in the Sensors tab don't jump around.
                 let catalog = sampler.catalog
-                self.rawKeys = catalog.allTempKeys.map { ($0, catalog.kind(of: $0)) }.sorted {
-                    let rank = ["CPU": 0, "GPU": 1]
-                    return (rank[$0.kind] ?? 2, $0.key) < (rank[$1.kind] ?? 2, $1.key)
-                }
+                let rank = ["CPU": 0, "GPU": 1]
+                self.rawKeys = catalog.allTempKeys
+                    .sorted { (rank[catalog.kind(of: $0)] ?? 2, $0) < (rank[catalog.kind(of: $1)] ?? 2, $1) }
+                    .map { ($0, catalog.name(of: $0)) }
                 self.fanLimits = (0..<smc.fanCount()).map { i in
                     ((try? smc.double("F\(i)Mn")) ?? 0, (try? smc.double("F\(i)Mx")) ?? 0)
                 }
@@ -73,6 +73,33 @@ final class SensorMonitor {
         }
     }
 
+    /// Fans and sensors as plain text, for a diagnostics report. Read on the monitor's queue.
+    func report(_ completion: @escaping ([String]) -> Void) {
+        queue.async { completion(self.reportLines()) }
+    }
+
+    private func reportLines() -> [String] {
+        guard let smc, let sampler else { return ["SMC: not available"] }
+        func value(_ key: String) -> String { (try? smc.double(key)).map { String(Int($0.rounded())) } ?? "?" }
+
+        var lines = fanLimits.indices.map { i in
+            "Fan \(i + 1): \(value("F\(i)Ac")) rpm, range \(value("F\(i)Mn"))–\(value("F\(i)Mx")), mode \(value("F\(i)Md"))"
+        }
+        if lines.isEmpty { lines = ["Fans: none"] }
+        lines.append("Unlock flag (Ftst): \(value("Ftst"))")
+
+        let catalog = sampler.catalog
+        lines.append("Sensors: \(catalog.cpuKeys.count) CPU, \(catalog.gpuKeys.count) GPU, \(catalog.allTempKeys.count) in total")
+        // One line per key family rather than one per key: a Mac exposes a couple of hundred.
+        let families = Dictionary(grouping: catalog.allTempKeys) { String($0.prefix(2)) }
+        for prefix in families.keys.sorted() {
+            let readings = families[prefix, default: []].compactMap { try? smc.double($0) }
+            guard let low = readings.min(), let high = readings.max() else { continue }
+            lines.append("  \(prefix)** ×\(readings.count): \(Int(low.rounded()))–\(Int(high.rounded())) °C")
+        }
+        return lines
+    }
+
     private func publish() {
         guard let onUpdate, let snap = read() else { return }
         DispatchQueue.main.async { onUpdate(snap) }
@@ -87,13 +114,12 @@ final class SensorMonitor {
                 rpm: (try? smc.double("F\(i)Ac")) ?? 0,
                 min: limits.min,
                 max: limits.max,
-                target: (try? smc.double("F\(i)Tg")) ?? 0,
                 manual: (try? smc.double("F\(i)Md")) == 1))
         }
         s.groups = sampler.sample()
         if includeRaw {
             s.raw = rawKeys.compactMap { entry in
-                (try? smc.double(entry.key)).map { SensorReading(id: entry.key, value: $0, kind: entry.kind) }
+                (try? smc.double(entry.key)).map { SensorReading(id: entry.key, name: entry.name, value: $0) }
             }
         }
         return s

@@ -35,14 +35,11 @@ struct SensorCatalog {
     static func plausible(_ v: Double?) -> Bool { v.map { (5...130).contains($0) } ?? false }
 
     /// Enumerates the whole key table (~0.4 s). Do it once per process.
-    static func discover(using smc: SMC) -> SensorCatalog {
-        func isFloat(_ key: String) -> Bool {
-            (try? smc.keyInfo(key)).map { $0.dataType.fourCCString == "flt " && $0.dataSize == 4 } ?? false
-        }
-        let temps = smc.allKeys().filter { $0.hasPrefix("T") && isFloat($0) }.sorted()
+    static func discover(using smc: SMCAccess) -> SensorCatalog {
+        let temps = smc.allKeys().filter { $0.hasPrefix("T") && smc.isFloat($0) }.sorted()
         func family(_ prefixes: [String], fallback: [String]) -> [String] {
             let found = temps.filter { key in prefixes.contains { key.hasPrefix($0) } }
-            return found.isEmpty ? fallback.filter(isFloat) : found
+            return found.isEmpty ? fallback.filter(smc.isFloat) : found
         }
         return SensorCatalog(cpuKeys: family(["Tp", "Te"], fallback: cpuFallback),
                              gpuKeys: family(["Tg"], fallback: gpuFallback),
@@ -53,6 +50,18 @@ struct SensorCatalog {
         if cpuKeys.contains(key) { return "CPU" }
         if gpuKeys.contains(key) { return "GPU" }
         return ""
+    }
+
+    /// Keys outside the CPU and GPU families whose meaning is known. `TB*T` matches the battery
+    /// temperature that `ioreg` reports on an M3 Pro; `TH0*` is the SSD in community key lists.
+    private static let knownPrefixes = [(prefix: "TB", name: "Battery"), (prefix: "TH0", name: "SSD")]
+
+    /// A readable name for the Sensors tab; empty when the key's meaning isn't known. A chip has
+    /// several die sensors per core, so CPU and GPU keys are numbered rather than named by core.
+    func name(of key: String) -> String {
+        if let i = cpuKeys.firstIndex(of: key) { return "CPU sensor \(i + 1)" }
+        if let i = gpuKeys.firstIndex(of: key) { return "GPU sensor \(i + 1)" }
+        return Self.knownPrefixes.first { key.hasPrefix($0.prefix) }?.name ?? ""
     }
 }
 
@@ -70,7 +79,7 @@ final class SensorSampler {
         var max: Double?
         var average: Double?
 
-        mutating func refresh(full: Bool, smc: SMC) {
+        mutating func refresh(full: Bool, smc: SMCAccess) {
             func read(_ keys: [String]) -> [(key: String, value: Double)] {
                 keys.compactMap { k in (try? smc.double(k)).flatMap { SensorCatalog.plausible($0) ? (k, $0) : nil } }
             }
@@ -85,7 +94,7 @@ final class SensorSampler {
         }
     }
 
-    private let smc: SMC
+    private let smc: SMCAccess
     let catalog: SensorCatalog
     private var cpu: Family
     private var gpu: Family
@@ -95,7 +104,7 @@ final class SensorSampler {
     /// Set when a curve follows `cpuAverage`, which needs every CPU key on every tick.
     var alwaysFullCPU = false
 
-    init(smc: SMC) {
+    init(smc: SMCAccess) {
         self.smc = smc
         catalog = SensorCatalog.discover(using: smc)
         cpu = Family(keys: catalog.cpuKeys)

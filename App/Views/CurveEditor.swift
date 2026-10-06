@@ -6,6 +6,8 @@ struct CurveEditor: View {
     @Binding var curve: Curve
     var liveTemp: Double?
     var editable: Bool
+    /// Points are stored in °C either way; this only changes what the chart is labelled in.
+    var fahrenheit = false
     @State private var dragging: UUID?
     @State private var selected: UUID?
 
@@ -22,7 +24,7 @@ struct CurveEditor: View {
                         .disabled(selectedPoint == nil || curve.points.count <= Curve.minPoints)
                     Spacer()
                     if let p = selectedPoint {
-                        Text("\(Int(p.temp))° → \(Int((p.percent * 100).rounded()))%")
+                        Text("\(Temperature.string(p.temp, fahrenheit: fahrenheit)) → \(Int((p.percent * 100).rounded()))%")
                             .monospacedDigit().foregroundStyle(.secondary)
                     }
                 }
@@ -45,12 +47,23 @@ struct CurveEditor: View {
             if let t = liveTemp {
                 RuleMark(x: .value("Now", min(max(t, Self.tempRange.lowerBound), Self.tempRange.upperBound)))
                     .foregroundStyle(.orange.opacity(0.6))
-                    .annotation(position: .top) { Text("\(Int(t))°").font(.caption2) }
+                    .annotation(position: .top) { Text(Temperature.string(t, fahrenheit: fahrenheit)).font(.caption2) }
             }
         }
         .chartXScale(domain: Self.tempRange)
         .chartYScale(domain: 0...100)
-        .chartXAxisLabel("Temperature °C")
+        .chartXAxis {
+            AxisMarks(values: axisTemps) { value in
+                AxisGridLine()
+                AxisTick()
+                AxisValueLabel {
+                    if let celsius = value.as(Double.self) {
+                        Text(String(Int(Temperature.displayed(celsius, fahrenheit: fahrenheit).rounded())))
+                    }
+                }
+            }
+        }
+        .chartXAxisLabel("Temperature \(fahrenheit ? "°F" : "°C")")
         .chartYAxisLabel("Fan %")
         .chartOverlay { proxy in
             GeometryReader { geo in
@@ -58,6 +71,13 @@ struct CurveEditor: View {
                     .gesture(editable ? drag(proxy: proxy, geo: geo) : nil)
             }
         }
+    }
+
+    /// Where the temperature axis is labelled, in °C: round numbers in whichever unit is shown.
+    private var axisTemps: [Double] {
+        fahrenheit
+            ? stride(from: 100.0, through: 200, by: 20).map { Temperature.celsius(fromDisplayed: $0, fahrenheit: true) }
+            : Array(stride(from: 30.0, through: 100, by: 10))
     }
 
     private func drag(proxy: ChartProxy, geo: GeometryProxy) -> some Gesture {

@@ -1,0 +1,13 @@
+// The one place the signing team and the bundle identifiers are set.
+//
+// Build settings use these directly. The code reads them from each target's Info.plist
+// (Config/Info.plist → Shared/Constants.swift), the launchd plist is generated from
+// LaunchDaemons/helper.plist at build time, and scripts/build-dmg.sh asks xcodebuild for them.
+// To build under another team, change the first two lines.
+
+FP_TEAM_ID = 6MD59J7ZW5
+FP_BUNDLE_ID = uz.stiv.macfanpilot
+FP_HELPER_ID = $(FP_BUNDLE_ID).helper
+
+DEVELOPMENT_TEAM = $(FP_TEAM_ID)
+INFOPLIST_FILE = Config/Info.plist

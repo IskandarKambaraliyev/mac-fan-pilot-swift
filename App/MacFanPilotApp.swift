@@ -2,7 +2,7 @@ import SwiftUI
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    let model = AppModel()
+    let model = AppModel.shared
     private var quitting = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {

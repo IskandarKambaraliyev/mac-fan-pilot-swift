@@ -3,31 +3,59 @@ import ServiceManagement
 import os
 
 enum HelperError: LocalizedError {
-    case notInstalled, rejected(String), connection(Error)
+    case notInstalled, rejected(String), connection(Error), mismatch
     var errorDescription: String? {
         switch self {
         case .notInstalled: return "Install the helper to control fans."
         case .rejected(let message): return "Fan control failed: \(message)"
         case .connection(let error): return "Couldn't reach the fan helper: \(error.localizedDescription)"
+        case .mismatch: return "The fan helper is from a different version of \(FP.appName). Uninstall it in Settings, then install it again."
+        }
+    }
+
+    /// The helper itself is unreachable or wrong, as opposed to refusing one request.
+    var isRepairable: Bool {
+        switch self {
+        case .connection, .mismatch: return true
+        case .notInstalled, .rejected: return false
         }
     }
 }
 
+enum HelperState: Equatable { case notInstalled, needsApproval, ready, error(String) }
+
+/// What the app needs from the privileged helper. `HelperClient` is the real one; the tests use
+/// a fake.
+@MainActor
+protocol FanHelper: AnyObject {
+    var state: HelperState { get }
+    /// Every heartbeat reply, and `.idle` if the connection is lost.
+    var onStatus: ((HelperStatus) -> Void)? { get set }
+    /// The helper became usable, e.g. the user just approved it in System Settings.
+    var onReady: (() -> Void)? { get set }
+
+    func refreshStatus()
+    func install()
+    func openApprovalSettings()
+    func uninstall() async
+    func apply(_ preset: Preset) async throws
+    func resetToAuto() async
+}
+
 @MainActor
 @Observable
-final class HelperClient {
-    enum State: Equatable { case notInstalled, needsApproval, ready, error(String) }
+final class HelperClient: FanHelper {
+    private(set) var state: HelperState = .notInstalled
 
-    private(set) var state: State = .notInstalled
-
-    /// Every heartbeat reply, and `.idle` if the connection is lost.
     @ObservationIgnored var onStatus: ((HelperStatus) -> Void)?
-    /// The helper became usable, e.g. the user just approved it in System Settings.
     @ObservationIgnored var onReady: (() -> Void)?
 
     private let log = Logger(subsystem: FP.appBundleID, category: "helper")
     private let service = SMAppService.daemon(plistName: FP.helperPlist)
     @ObservationIgnored private var connection: NSXPCConnection?
+    /// The connection whose helper has answered with our own version.
+    @ObservationIgnored private weak var verified: NSXPCConnection?
+    @ObservationIgnored private var repaired = false
     @ObservationIgnored private var heartbeatTimer: Timer?
     @ObservationIgnored private var approvalTimer: Timer?
     @ObservationIgnored private var activity: NSObjectProtocol?
@@ -93,6 +121,12 @@ final class HelperClient {
         return "Move \(FP.appName) to the Applications folder and open it from there."
     }
 
+    /// A build run from Xcode's build folder must not re-point the daemon at itself.
+    private static var isInApplications: Bool {
+        let path = Bundle.main.bundlePath
+        return path.hasPrefix("/Applications/") || path.hasPrefix(NSHomeDirectory() + "/Applications/")
+    }
+
     private func pollForApproval(_ on: Bool) {
         guard on != (approvalTimer != nil) else { return }
         approvalTimer?.invalidate()
@@ -110,21 +144,52 @@ final class HelperClient {
             return
         }
         let data = try JSONEncoder().encode(preset)
-        var outcome: Outcome<String?> = await call { $0.apply(presetJSON: data, reply: $1) }
-        if case .failed = outcome {
-            // The helper may have been on its way out; a second message makes launchd start it again.
-            outcome = await call { $0.apply(presetJSON: data, reply: $1) }
+        do {
+            try await send(data)
+        } catch let error as HelperError {
+            guard error.isRepairable, await repair() else { throw error }
+            try await send(data)
         }
-        switch outcome {
-        case .reply(nil):
-            startHeartbeat()
-        case .reply(let message?):
+        startHeartbeat()
+    }
+
+    private func send(_ presetJSON: Data) async throws {
+        do {
+            try await checkVersion()
+            let rejection: String? = try await request { $0.apply(presetJSON: presetJSON, reply: $1) }
+            if let rejection { throw HelperError.rejected(rejection) }
+        } catch {
             disconnect()
-            throw HelperError.rejected(message)
-        case .failed(let error):
-            disconnect()
-            throw HelperError.connection(error)
+            throw error
         }
+    }
+
+    /// Once per connection: make sure the helper that answers is the one in this app bundle.
+    private func checkVersion() async throws {
+        guard verified == nil || verified !== connection else { return }
+        let version: String = try await request { $0.version(reply: $1) }
+        guard version == FP.version else {
+            log.error("helper is \(version, privacy: .public), app is \(FP.version, privacy: .public)")
+            throw HelperError.mismatch
+        }
+        verified = connection
+    }
+
+    /// Registers the daemon again, once per launch. Moving or replacing the app can leave launchd
+    /// unable to start the helper, or starting the copy from the previous build.
+    private func repair() async -> Bool {
+        guard !repaired, Self.isInApplications else { return false }
+        repaired = true
+        log.notice("helper unreachable or outdated; registering it again")
+        disconnect()
+        try? await service.unregister()
+        do {
+            try service.register()
+        } catch {
+            log.error("register failed: \(error.localizedDescription, privacy: .public)")
+        }
+        refreshStatus()
+        return state == .ready
     }
 
     func resetToAuto() async {
@@ -162,6 +227,17 @@ final class HelperClient {
         heartbeatTimer = nil
         if let activity { ProcessInfo.processInfo.endActivity(activity) }
         activity = nil
+    }
+
+    /// A call that throws when the helper can't be reached. The helper may have been on its way
+    /// out; a second message makes launchd start it again.
+    private func request<T>(_ body: (HelperProtocol, @escaping (T) -> Void) -> Void) async throws -> T {
+        var outcome: Outcome<T> = await call(body)
+        if case .failed = outcome { outcome = await call(body) }
+        switch outcome {
+        case .reply(let value): return value
+        case .failed(let error): throw HelperError.connection(error)
+        }
     }
 
     /// XPC calls exactly one of the reply block and the error handler, so this always returns.

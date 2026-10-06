@@ -6,10 +6,15 @@ struct MenuContentView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Temperatures
-            HStack(spacing: 20) {
-                tempBlock("CPU", model.cpuTemp)
-                tempBlock("GPU", model.gpuTemp)
-                Spacer()
+            VStack(spacing: 6) {
+                HStack(spacing: 20) {
+                    tempBlock(.cpu, model.cpuTemp)
+                    tempBlock(.gpu, model.gpuTemp)
+                    Spacer()
+                }
+                if model.history.count > 1 {
+                    HistoryChart(samples: model.history, format: model.format(temp:))
+                }
             }
 
             Divider()
@@ -18,8 +23,8 @@ struct MenuContentView: View {
                 // Fans
                 ForEach(model.snapshot.fans) { fan in
                     HStack {
-                        Text(fanName(fan.id)).frame(width: 70, alignment: .leading)
-                        Text("\(Int(fan.rpm)) rpm").monospacedDigit().foregroundStyle(.secondary)
+                        Text(model.fanName(fan.id)).frame(width: 70, alignment: .leading)
+                        Text("\(model.format(rpm: fan.rpm)) rpm").monospacedDigit().foregroundStyle(.secondary)
                             .frame(width: 80, alignment: .trailing)
                         ProgressView(value: min(max(fan.fraction, 0), 1)).progressViewStyle(.linear)
                     }
@@ -33,7 +38,8 @@ struct MenuContentView: View {
                     ForEach(model.presets.presets) { preset in
                         PresetRow(preset: preset,
                                   isActive: preset.id == model.presets.activeID,
-                                  isApplying: preset.id == model.applyingID) {
+                                  isApplying: preset.id == model.applyingID,
+                                  inEffect: model.isControlling || preset.isAllAuto) {
                             Task { await model.activate(preset) }
                         }
                     }
@@ -57,7 +63,11 @@ struct MenuContentView: View {
         }
         .padding(14)
         .frame(width: 280)
-        .onAppear { model.helper.refreshStatus() }
+        .onAppear {
+            model.popoverVisible = true
+            model.helper.refreshStatus()
+        }
+        .onDisappear { model.popoverVisible = false }
     }
 
     /// At most one line of status under the presets, most important first.
@@ -76,6 +86,12 @@ struct MenuContentView: View {
         case .ready:
             if model.externalControl {
                 warning("Another app is controlling the fans. Quit it before choosing a preset here.")
+            } else if model.emergency {
+                warning("Very hot: every fan runs at full speed until it cools down.")
+            } else if model.pausedOnBattery {
+                Label("On battery, so the fans are on Automatic.", systemImage: "battery.75percent")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             } else if let err = model.lastError {
                 warning(err)
             }
@@ -88,15 +104,15 @@ struct MenuContentView: View {
             .fixedSize(horizontal: false, vertical: true)
     }
 
-    private func tempBlock(_ title: String, _ value: Double?) -> some View {
+    /// The coloured mark matches the sensor's line in the history chart.
+    private func tempBlock(_ series: HistorySeries, _ value: Double?) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(title).font(.caption).foregroundStyle(.secondary)
+            HStack(spacing: 4) {
+                Text(series.rawValue).font(.caption).foregroundStyle(.secondary)
+                Capsule().fill(series.color).frame(width: 10, height: 3)
+            }
             Text(model.format(temp: value)).font(.title2.weight(.medium)).monospacedDigit()
         }
-    }
-
-    private func fanName(_ i: Int) -> String {
-        model.snapshot.fans.count == 2 ? (i == 0 ? "Left" : "Right") : "Fan \(i + 1)"
     }
 }
 
@@ -104,6 +120,8 @@ struct PresetRow: View {
     let preset: Preset
     let isActive: Bool
     let isApplying: Bool
+    /// false when the preset is selected but something keeps it from running.
+    let inEffect: Bool
     let action: () -> Void
     @State private var hover = false
 
@@ -116,7 +134,9 @@ struct PresetRow: View {
                 if isApplying {
                     ProgressView().controlSize(.small)
                 } else if isActive {
-                    Image(systemName: "checkmark").foregroundStyle(.tint)
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(inEffect ? AnyShapeStyle(.tint) : AnyShapeStyle(.tertiary))
+                        .help(inEffect ? "" : "Selected, but not running right now")
                 }
             }
             .padding(.horizontal, 6).padding(.vertical, 4)

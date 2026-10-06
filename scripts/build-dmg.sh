@@ -13,11 +13,19 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 APP_NAME="MacFanPilot"
-TEAM_ID="6MD59J7ZW5"
-APP_ID="uz.stiv.macfanpilot"
-HELPER_ID="uz.stiv.macfanpilot.helper"
 BUILD_DIR="build"
 DIST_DIR="dist"
+
+# The team and bundle identifiers are set in Config/Identity.xcconfig; ask xcodebuild for them.
+SETTINGS=$(xcodebuild -project "$APP_NAME.xcodeproj" -scheme "$APP_NAME" -configuration Release -showBuildSettings 2>/dev/null)
+setting() { awk -v key="$1" '$1 == key && $2 == "=" { print $3; exit }' <<< "$SETTINGS"; }
+TEAM_ID=$(setting FP_TEAM_ID)
+APP_ID=$(setting FP_BUNDLE_ID)
+HELPER_ID=$(setting FP_HELPER_ID)
+if [ -z "$TEAM_ID" ] || [ -z "$APP_ID" ] || [ -z "$HELPER_ID" ]; then
+    echo "error: couldn't read the identifiers from the build settings" >&2
+    exit 1
+fi
 
 # First valid signing identity of the given kind whose certificate belongs to the team.
 find_identity() {
@@ -73,6 +81,10 @@ codesign --verify -R="anchor apple generic and identifier \"$APP_ID\" and certif
 codesign --verify -R="anchor apple generic and identifier \"$HELPER_ID\" and certificate leaf[subject.OU] = \"$TEAM_ID\"" \
     "$APP/Contents/MacOS/${APP_NAME}Helper"
 [ "$(lipo -archs "$APP/Contents/MacOS/$APP_NAME")" = "arm64" ] || { echo "error: app is not arm64-only" >&2; exit 1; }
+# The daemon plist is generated at build time; SMAppService looks it up by this exact name.
+DAEMON_PLIST="$APP/Contents/Library/LaunchDaemons/$HELPER_ID.plist"
+[ "$(/usr/libexec/PlistBuddy -c "Print :Label" "$DAEMON_PLIST")" = "$HELPER_ID" ] \
+    || { echo "error: launchd plist is missing or has the wrong label" >&2; exit 1; }
 
 echo "==> Packing"
 DMG="$DIST_DIR/$APP_NAME-$VERSION.dmg"

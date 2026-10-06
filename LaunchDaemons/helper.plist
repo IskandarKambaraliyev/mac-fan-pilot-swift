@@ -2,21 +2,23 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <!-- A template: the build fills in the identifiers from Config/Identity.xcconfig and copies
+         the result into the app as Contents/Library/LaunchDaemons/<helper id>.plist. -->
     <key>Label</key>
-    <string>uz.stiv.macfanpilot.helper</string>
+    <string>__FP_HELPER_ID__</string>
     <key>BundleProgram</key>
     <string>Contents/MacOS/MacFanPilotHelper</string>
     <key>MachServices</key>
     <dict>
-        <key>uz.stiv.macfanpilot.helper</key>
+        <key>__FP_HELPER_ID__</key>
         <true/>
     </dict>
     <key>AssociatedBundleIdentifiers</key>
     <array>
-        <string>uz.stiv.macfanpilot</string>
+        <string>__FP_BUNDLE_ID__</string>
     </array>
-    <!-- Relaunch after a crash so the helper can hand the fans back to macOS.
-         A clean exit (idle, SIGTERM) is left alone. -->
+    <!-- Relaunch after a crash, or after a SIGTERM that arrived while a fan could not be handed
+         back, so the helper can return the fans to macOS. A clean exit is left alone. -->
     <key>KeepAlive</key>
     <dict>
         <key>SuccessfulExit</key>

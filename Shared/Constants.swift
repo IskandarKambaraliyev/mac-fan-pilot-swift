@@ -2,11 +2,15 @@ import Foundation
 
 enum FP {
     static let appName       = "MacFanPilot"
-    static let appBundleID   = "uz.stiv.macfanpilot"
-    static let helperLabel   = "uz.stiv.macfanpilot.helper"
-    static let helperPlist   = "uz.stiv.macfanpilot.helper.plist"
-    static let teamID        = "6MD59J7ZW5"
-    static let helperVersion = "1.0"
+    // The identifiers live in Config/Identity.xcconfig and reach this code through each target's
+    // Info.plist, so the build settings, the launchd plist and the XPC checks can't drift apart.
+    static let appBundleID   = info("FPAppBundleID")
+    static let helperLabel   = info("FPHelperLabel")
+    static let helperPlist   = "\(helperLabel).plist"
+    static let teamID        = info("FPTeamID")
+    /// "1.0 (1)". The app and its helper are built together, so a different answer from the
+    /// helper means launchd is running a copy from another build.
+    static let version       = "\(info("CFBundleShortVersionString")) (\(info("CFBundleVersion")))"
 
     static let appRequirement =
         #"anchor apple generic and identifier "\#(appBundleID)" and certificate leaf[subject.OU] = "\#(teamID)""#
@@ -30,4 +34,9 @@ enum FP {
     static let tempSmoothing: Double = 0.3          // weight of the newest reading
     static let maxSensorFailures = 3                // consecutive ticks
     static let maxControlFailures = 3
+    static let fastReleaseRetries = 30              // every 2 s, then every 10 s for as long as it takes
+
+    private static func info(_ key: String) -> String {
+        Bundle.main.object(forInfoDictionaryKey: key) as? String ?? ""
+    }
 }

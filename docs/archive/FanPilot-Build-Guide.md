@@ -1,5 +1,11 @@
 # FanPilot — Build Guide
 
+> **Archived.** This is the specification MacFanPilot was first built from. It predates the final
+> name, uses placeholder identifiers (`com.abdulloh.fanpilot`), and its code listings no longer
+> match the source. It is kept for the background in §1 (how fan control works on Apple Silicon).
+> For the current design read the [README](../../README.md); for testing and the safety rules read
+> [docs/Testing.md](../Testing.md).
+
 A native, minimal macOS menu bar app for monitoring temperatures and controlling fans on Apple Silicon Macs (developed and tested against an **M3 Pro MacBook Pro**).
 
 This document is a full implementation spec: architecture, project setup, SMC layer, privileged helper, fan control logic, presets, UI, login items, signing, testing and troubleshooting. Code is given per file; names and bundle IDs are placeholders you can change.

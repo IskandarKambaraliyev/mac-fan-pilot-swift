@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    # Apple Silicon runner with an Xcode that reads the project format (Xcode 16 or later).
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      # The test bundle is signed to run locally, so no certificate is needed.
+      - name: Unit tests
+        run: |
+          xcodebuild test -project MacFanPilot.xcodeproj -scheme MacFanPilot \
+            -destination 'platform=macOS,arch=arm64'
+
+      # The app and helper are signed with the team's certificate in real builds. Here the point
+      # is only that they compile and that the bundle is put together.
+      - name: Build app and helper
+        run: |
+          xcodebuild build -project MacFanPilot.xcodeproj -scheme MacFanPilot -configuration Release \
+            -derivedDataPath build/ci CODE_SIGNING_ALLOWED=NO
+          test -f build/ci/Build/Products/Release/MacFanPilot.app/Contents/MacOS/MacFanPilotHelper
+          plutil -lint build/ci/Build/Products/Release/MacFanPilot.app/Contents/Library/LaunchDaemons/*.plist

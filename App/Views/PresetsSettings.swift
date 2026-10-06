@@ -1,8 +1,10 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct PresetsSettings: View {
     @Environment(AppModel.self) private var model
     @State private var selection: UUID?
+    @State private var transferError: String?
 
     var body: some View {
         HSplitView {
@@ -24,6 +26,13 @@ struct PresetsSettings: View {
                         .help("Delete")
                         .disabled(selectedPreset?.isBuiltIn ?? true)
                     Spacer()
+                    Menu {
+                        Button("Import Presets…", action: importPresets)
+                        Button("Export Custom Presets…", action: exportPresets)
+                            .disabled(model.presets.custom.isEmpty)
+                    } label: { Image(systemName: "ellipsis.circle") }
+                        .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+                        .help("Import or export presets")
                 }
                 .buttonStyle(.borderless).padding(6)
             }
@@ -40,6 +49,28 @@ struct PresetsSettings: View {
             .frame(minWidth: 320, maxWidth: .infinity, maxHeight: .infinity)
         }
         .onAppear { if selection == nil { selection = model.presets.activeID } }
+        .alert("Presets", isPresented: Binding(get: { transferError != nil }, set: { if !$0 { transferError = nil } })) {
+            Button("OK") {}
+        } message: {
+            Text(transferError ?? "")
+        }
+    }
+
+    private func exportPresets() {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.json]
+        panel.nameFieldStringValue = "\(FP.appName) Presets.json"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do { try model.presets.exportData().write(to: url, options: .atomic) }
+        catch { transferError = error.localizedDescription }
+    }
+
+    private func importPresets() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.json]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do { selection = try model.presets.importPresets(from: Data(contentsOf: url)).first?.id }
+        catch { transferError = error.localizedDescription }
     }
 
     private var selectedPreset: Preset? { model.presets.presets.first { $0.id == selection } }
