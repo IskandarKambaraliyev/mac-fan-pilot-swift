@@ -1,0 +1,41 @@
+# Build output (scripts/build-dmg.sh)
+/build/
+/dist/
+*.dmg
+
+# Xcode
+DerivedData/
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+# Shared schemes in xcshareddata/ are tracked on purpose.
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/
+
+# Signing material: never commit
+*.p12
+*.cer
+*.mobileprovision
+*.provisionprofile
+AuthKey_*.p8
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~

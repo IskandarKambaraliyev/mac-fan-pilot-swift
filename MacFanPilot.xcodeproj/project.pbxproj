@@ -1,0 +1,521 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		F0000000000000000000C001 /* MacFanPilotHelper in Embed Helper */ = {isa = PBXBuildFile; fileRef = F0000000000000000000B002 /* MacFanPilotHelper */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		F0000000000000000000C002 /* uz.stiv.macfanpilot.helper.plist in Copy Launch Daemon */ = {isa = PBXBuildFile; fileRef = F0000000000000000000B004 /* uz.stiv.macfanpilot.helper.plist */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		F0000000000000000000F002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F00000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F0000000000000000000D002;
+			remoteInfo = MacFanPilotHelper;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F0000000000000000000E004 /* Embed Helper */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				F0000000000000000000C001 /* MacFanPilotHelper in Embed Helper */,
+			);
+			name = "Embed Helper";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0000000000000000000E005 /* Copy Launch Daemon */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Library/LaunchDaemons;
+			dstSubfolderSpec = 1;
+			files = (
+				F0000000000000000000C002 /* uz.stiv.macfanpilot.helper.plist in Copy Launch Daemon */,
+			);
+			name = "Copy Launch Daemon";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		F0000000000000000000B001 /* MacFanPilot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacFanPilot.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F0000000000000000000B002 /* MacFanPilotHelper */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MacFanPilotHelper; sourceTree = BUILT_PRODUCTS_DIR; };
+		F0000000000000000000B003 /* smcdump */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = smcdump; sourceTree = BUILT_PRODUCTS_DIR; };
+		F0000000000000000000B004 /* uz.stiv.macfanpilot.helper.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = uz.stiv.macfanpilot.helper.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		F0000000000000000000A001 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		F0000000000000000000A002 /* App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = App;
+			sourceTree = "<group>";
+		};
+		F0000000000000000000A003 /* Helper */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Helper;
+			sourceTree = "<group>";
+		};
+		F0000000000000000000A004 /* Tools */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Tools;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		F0000000000000000000E002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0000000000000000000E012 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0000000000000000000E022 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		F00000000000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				F0000000000000000000A002 /* App */,
+				F0000000000000000000A003 /* Helper */,
+				F0000000000000000000A001 /* Shared */,
+				F0000000000000000000A004 /* Tools */,
+				F00000000000000000000004 /* LaunchDaemons */,
+				F00000000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		F00000000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F0000000000000000000B001 /* MacFanPilot.app */,
+				F0000000000000000000B002 /* MacFanPilotHelper */,
+				F0000000000000000000B003 /* smcdump */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F00000000000000000000004 /* LaunchDaemons */ = {
+			isa = PBXGroup;
+			children = (
+				F0000000000000000000B004 /* uz.stiv.macfanpilot.helper.plist */,
+			);
+			path = LaunchDaemons;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		F0000000000000000000D001 /* MacFanPilot */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F00000000000000000010002 /* Build configuration list for PBXNativeTarget "MacFanPilot" */;
+			buildPhases = (
+				F0000000000000000000E001 /* Sources */,
+				F0000000000000000000E002 /* Frameworks */,
+				F0000000000000000000E003 /* Resources */,
+				F0000000000000000000E004 /* Embed Helper */,
+				F0000000000000000000E005 /* Copy Launch Daemon */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F0000000000000000000F001 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				F0000000000000000000A002 /* App */,
+				F0000000000000000000A001 /* Shared */,
+			);
+			name = MacFanPilot;
+			productName = MacFanPilot;
+			productReference = F0000000000000000000B001 /* MacFanPilot.app */;
+			productType = "com.apple.product-type.application";
+		};
+		F0000000000000000000D002 /* MacFanPilotHelper */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F00000000000000000010003 /* Build configuration list for PBXNativeTarget "MacFanPilotHelper" */;
+			buildPhases = (
+				F0000000000000000000E011 /* Sources */,
+				F0000000000000000000E012 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				F0000000000000000000A003 /* Helper */,
+				F0000000000000000000A001 /* Shared */,
+			);
+			name = MacFanPilotHelper;
+			productName = MacFanPilotHelper;
+			productReference = F0000000000000000000B002 /* MacFanPilotHelper */;
+			productType = "com.apple.product-type.tool";
+		};
+		F0000000000000000000D003 /* smcdump */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F00000000000000000010004 /* Build configuration list for PBXNativeTarget "smcdump" */;
+			buildPhases = (
+				F0000000000000000000E021 /* Sources */,
+				F0000000000000000000E022 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				F0000000000000000000A004 /* Tools */,
+				F0000000000000000000A001 /* Shared */,
+			);
+			name = smcdump;
+			productName = smcdump;
+			productReference = F0000000000000000000B003 /* smcdump */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F00000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2630;
+				LastUpgradeCheck = 2630;
+				TargetAttributes = {
+					F0000000000000000000D001 = {
+						CreatedOnToolsVersion = 26.3;
+					};
+					F0000000000000000000D002 = {
+						CreatedOnToolsVersion = 26.3;
+					};
+					F0000000000000000000D003 = {
+						CreatedOnToolsVersion = 26.3;
+					};
+				};
+			};
+			buildConfigurationList = F00000000000000000010001 /* Build configuration list for PBXProject "MacFanPilot" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = F00000000000000000000002;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = F00000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				F0000000000000000000D001 /* MacFanPilot */,
+				F0000000000000000000D002 /* MacFanPilotHelper */,
+				F0000000000000000000D003 /* smcdump */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		F0000000000000000000E003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F0000000000000000000E001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0000000000000000000E011 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0000000000000000000E021 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F0000000000000000000F001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F0000000000000000000D002 /* MacFanPilotHelper */;
+			targetProxy = F0000000000000000000F002 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		F00000000000000000011001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 6MD59J7ZW5;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/Shared/SMC";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				ONLY_ACTIVE_ARCH = YES;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		F00000000000000000011002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 6MD59J7ZW5;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/Shared/SMC";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		F00000000000000000011003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/MacFanPilot.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = MacFanPilot;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = uz.stiv.macfanpilot;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "App/MacFanPilot-Bridging-Header.h";
+			};
+			name = Debug;
+		};
+		F00000000000000000011004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/MacFanPilot.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = MacFanPilot;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = uz.stiv.macfanpilot;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "App/MacFanPilot-Bridging-Header.h";
+			};
+			name = Release;
+		};
+		F00000000000000000011005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = MacFanPilotHelper;
+				PRODUCT_BUNDLE_IDENTIFIER = uz.stiv.macfanpilot.helper;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Helper/Helper-Bridging-Header.h";
+			};
+			name = Debug;
+		};
+		F00000000000000000011006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = MacFanPilotHelper;
+				PRODUCT_BUNDLE_IDENTIFIER = uz.stiv.macfanpilot.helper;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Helper/Helper-Bridging-Header.h";
+			};
+			name = Release;
+		};
+		F00000000000000000011007 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_BUNDLE_IDENTIFIER = uz.stiv.macfanpilot.smcdump;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Tools/smcdump/smcdump-Bridging-Header.h";
+			};
+			name = Debug;
+		};
+		F00000000000000000011008 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_BUNDLE_IDENTIFIER = uz.stiv.macfanpilot.smcdump;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Tools/smcdump/smcdump-Bridging-Header.h";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F00000000000000000010001 /* Build configuration list for PBXProject "MacFanPilot" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F00000000000000000011001 /* Debug */,
+				F00000000000000000011002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F00000000000000000010002 /* Build configuration list for PBXNativeTarget "MacFanPilot" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F00000000000000000011003 /* Debug */,
+				F00000000000000000011004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F00000000000000000010003 /* Build configuration list for PBXNativeTarget "MacFanPilotHelper" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F00000000000000000011005 /* Debug */,
+				F00000000000000000011006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F00000000000000000010004 /* Build configuration list for PBXNativeTarget "smcdump" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F00000000000000000011007 /* Debug */,
+				F00000000000000000011008 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = F00000000000000000000001 /* Project object */;
+}
