@@ -5,12 +5,12 @@ speed, and lets you choose how the fans behave: leave them to macOS, follow a te
 or hold a fixed speed.
 
 - **Offline.** No account, no network requests, no analytics. Nothing leaves your Mac.
-- **Native.** SwiftUI, no third-party dependencies, about 1 MB to download.
+- **Native.** SwiftUI, no third-party dependencies, about 3 MB to download.
 - **Apple Silicon only**, macOS 14 or later. Lives in the menu bar, with no Dock icon.
 
 ## Status
 
-Version 1.1.0. Developed and tested on an M3 Pro MacBook Pro running macOS 26. Other Apple Silicon
+Version 1.1.1. Developed and tested on an M3 Pro MacBook Pro running macOS 26. Other Apple Silicon
 Macs are expected to work, because sensors are discovered at runtime rather than read from a
 per-model table, but they have not been tested. A Mac without fans (MacBook Air) shows
 temperatures only.
@@ -50,7 +50,7 @@ macOS update can change. When control is refused, the app says so and keeps work
 
 ## Installing
 
-1. Open `MacFanPilot-1.1.0.dmg` and drag **MacFanPilot** to **Applications**.
+1. Open `MacFanPilot-1.1.1.dmg` and drag **MacFanPilot** to **Applications**.
 2. Open it from Applications. The build is not notarized, so macOS says it cannot verify the app.
    Click **Done**, then go to **System Settings → Privacy & Security**, scroll down and click
    **Open Anyway**.
@@ -115,7 +115,7 @@ relying on a custom preset.
 You need Xcode 16 or later and a signing certificate from an Apple Developer team.
 
 ```sh
-scripts/build-dmg.sh        # → dist/MacFanPilot-1.1.0.dmg
+scripts/build-dmg.sh        # → dist/MacFanPilot-1.1.1.dmg
 ```
 
 The script builds the Release configuration, re-signs the app and its helper with a secure
@@ -200,7 +200,7 @@ Tests/          unit tests; they compile the sources above directly
 Config/         Identity.xcconfig (team and bundle identifiers) and the Info.plist that carries them
 LaunchDaemons/  template of the launchd plist; the build fills in the identifiers
 Tools/smcdump/  SMC key dumper
-scripts/        build-dmg.sh, make-icon.swift
+scripts/        build-dmg.sh
 docs/           Testing.md, and the archived original specification
 ```
 

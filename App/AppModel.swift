@@ -27,15 +27,6 @@ enum ControlState {
     case emergency     // controlling, but a hot sensor forces every fan to maximum
     case stopped       // a preset is selected and could not be kept running
 
-    var symbol: String {
-        switch self {
-        case .automatic: "fan"
-        case .controlling: "fan.fill"
-        case .emergency: "thermometer.high"
-        case .stopped: "exclamationmark.triangle"
-        }
-    }
-
     var needsAttention: Bool { self == .emergency || self == .stopped }
 }
 
